@@ -28,12 +28,16 @@
             width: 100%;
             max-width: 500px;
             padding: 20px;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         h1 {
             font-size: 1.6rem;
             margin-bottom: 20px;
             color: #00adb5;
+            text-align: center;
         }
         .card {
             background-color: #1a1c24;
@@ -41,6 +45,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border: 1px solid #2a2d3d;
+            width: 100%;
         }
         
         /* --- ÉCRAN PARAMÉTRAGE --- */
@@ -77,6 +82,7 @@
             border-radius: 10px;
             margin-bottom: 15px;
             border: 1px solid #2a2d3d;
+            width: 100%;
         }
         .switch-label {
             font-size: 0.95rem;
@@ -123,28 +129,19 @@
             margin-top: 10px;
             box-shadow: 0 5px 15px rgba(0, 173, 181, 0.3);
         }
-        .btn-secondary {
-            width: 100%;
-            background-color: #3a3d52;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 5px;
-            display: none; /* Masqué car le bouton principal gère le lancement plein écran */
-        }
 
-        /* --- ÉCRAN SCAN VERROUILLÉ --- */
+        /* --- ÉCRAN SCAN VERROUILLÉ (CENTRAGE PARFAIT) --- */
         #scan-screen {
             display: none;
             width: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
         .camera-box-wrapper {
             width: 290px;
             height: 290px;
-            margin: 0 auto;
             background-color: #0f111a;
             border-radius: 24px;
             overflow: hidden;
@@ -241,6 +238,14 @@
             </div>
 
             <div class="switch-group">
+                <span class="switch-label">🖥️ Lancer en mode Plein Écran</span>
+                <label class="switch">
+                    <input type="checkbox" id="switch-fullscreen" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="switch-group">
                 <span class="switch-label">🔊 Émettre un bip au scan</span>
                 <label class="switch">
                     <input type="checkbox" id="switch-sound" checked>
@@ -275,7 +280,7 @@
 
     <script>
         let html5QrCode;
-        let configBorne = { duration: 5, sound: true, vibrate: true };
+        let configBorne = { duration: 5, sound: true, vibrate: true, fullscreen: true };
         let timerRetour;
 
         function echapperHTML(str) {
@@ -300,6 +305,7 @@
                     document.getElementById('input-duration').value = configBorne.duration;
                     document.getElementById('switch-sound').checked = configBorne.sound;
                     document.getElementById('switch-vibrate').checked = configBorne.vibrate;
+                    document.getElementById('switch-fullscreen').checked = configBorne.fullscreen !== false;
                 } catch(e) { console.error(e); }
             }
         });
@@ -327,17 +333,22 @@
             const confirmation = confirm("Lancer la borne ? Les réglages seront verrouillés.");
             if (!confirmation) return;
 
-            // FIX PLEIN ÉCRAN : Le mode plein écran est appelé DIRECTEMENT après la fermeture du confirm() pour ne pas être annulé
-            forcerPleinEcran();
-
+            // CONFIGURATION ENREGISTRÉE
             configBorne.duration = parseInt(document.getElementById('input-duration').value, 10) || 5;
             configBorne.sound = document.getElementById('switch-sound').checked;
             configBorne.vibrate = document.getElementById('switch-vibrate').checked;
+            configBorne.fullscreen = document.getElementById('switch-fullscreen').checked;
 
             localStorage.setItem('borne_config', JSON.stringify(configBorne));
 
+            // EXÉCUTION DU PLEIN ÉCRAN APRÈS LE CONFIRM (Plus de perturbation du message)
+            if (configBorne.fullscreen) {
+                forcerPleinEcran();
+            }
+
             document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('scan-screen').style.display = 'block';
+            // Utilisation de 'flex' pour appliquer le centrage CSS parfait de la caméra
+            document.getElementById('scan-screen').style.display = 'flex';
 
             lancerLeScanner();
         }
@@ -380,7 +391,7 @@
             }
 
             if (estUrl) {
-                // RECONSTRUCTION ET CORRECTION LIENS GOOGLE DRIVE (Aperçu Iframe Intégrable)
+                // RECONSTRUCTION ET CORRECTION LIENS GOOGLE DRIVE (Aperçu Iframe Intégrable Canonique)
                 if (cleanContent.includes("drive.google.com")) {
                     let fileId = "";
                     
@@ -391,7 +402,6 @@
                     }
                     
                     if (fileId) {
-                        // Utilisation de l'URL d'aperçu universelle sans restriction X-Frame
                         cleanContent = `https://docs.google.com/file/d/${fileId}/preview`;
                     }
                     targetContainer.innerHTML = `<iframe class="scanned-iframe" src="${cleanContent}" allow="autoplay"></iframe>`;
@@ -452,4 +462,4 @@
     </script>
 
 </body>
-</html> 
+</html>
