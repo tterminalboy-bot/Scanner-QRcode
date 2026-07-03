@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>QRcode-Scanner borne </title>
+    <title>QRcode-Scanner borne</title>
     <link rel="icon" type="image/png" href="icone.png">
     
     <link rel="apple-touch-icon" href="icone.png">
@@ -133,7 +133,7 @@
             box-shadow: 0 5px 15px rgba(0, 173, 181, 0.3);
         }
 
-        /* --- ÉCRAN SCAN VERROUILLÉ (CENTRAGE PARFAIT) --- */
+        /* --- ÉCRAN SCAN VERROUILLÉ --- */
         #scan-screen {
             display: none;
             width: 100%;
@@ -178,7 +178,7 @@
             border-radius: 30px;
             font-size: 0.85rem;
             font-weight: bold;
-            margin-bottom: 20px; /* Espace fixe sous le texte */
+            margin-bottom: 20px;
         }
 
         /* --- PAGE EN OVERLAY PLEIN ÉCRAN TOTAL --- */
@@ -221,7 +221,6 @@
             color: white;
         }
         
-        /* Bannière du compte à rebours flottante */
         .countdown-banner {
             width: 100%;
             background-color: rgba(0, 0, 0, 0.85);
@@ -272,7 +271,7 @@
                 </label>
             </div>
 
-            <button type="button" class="btn-primary" onclick="confirmerEtLancer()">🚀 Enregistrer et lancer la borne</button>
+            <button type="button" class="btn-primary" onclick="confirmerEtLancer()">Enregistrer et lancer la borne</button>
         </div>
 
         <div id="scan-screen">
@@ -368,10 +367,28 @@
             
             const configScan = { fps: 25, qrbox: 220 };
 
-            html5QrCode.start({ facingMode: "environment" }, configScan, onScanSuccess)
-            .catch(err => {
-                html5QrCode.start({ facingMode: "user" }, configScan, onScanSuccess)
-                .catch(e => console.warn(e));
+            // Récupération de la liste des caméras pour cibler spécifiquement l'objectif standard 1x
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length > 0) {
+                    // Recherche d'un capteur arrière classique (exclut les termes liés au grand angle/0.5x si présents)
+                    let backCamera = devices.find(device => 
+                        device.label.toLowerCase().includes("back") || 
+                        device.label.toLowerCase().includes("arrière")
+                    );
+                    
+                    // Si plusieurs capteurs arrières existent, on sélectionne le premier (souvent le capteur 1x par défaut)
+                    let targetDeviceId = backCamera ? backCamera.deviceId : devices[0].deviceId;
+                    
+                    html5QrCode.start(targetDeviceId, configScan, onScanSuccess)
+                    .catch(err => console.warn(err));
+                } else {
+                    // Fallback si la liste ne renvoie rien
+                    html5QrCode.start({ facingMode: "environment" }, configScan, onScanSuccess)
+                    .catch(err => console.warn(err));
+                }
+            }).catch(e => {
+                html5QrCode.start({ facingMode: "environment" }, configScan, onScanSuccess)
+                .catch(err => console.warn(err));
             });
         }
 
